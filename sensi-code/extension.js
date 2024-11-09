@@ -1,36 +1,75 @@
-// The module 'vscode' contains the VS Code extensibility API
-// Import the module and reference it with the alias vscode in your code below
 const vscode = require('vscode');
+const axios = require('axios');  // Use axios for HTTP requests
 
-// This method is called when your extension is activated
-// Your extension is activated the very first time the command is executed
-
-/**
- * @param {vscode.ExtensionContext} context
- */
 function activate(context) {
+	console.log('Sensi-code extension is now active!');
 
-	// Use the console to output diagnostic information (console.log) and errors (console.error)
-	// This line of code will only be executed once when your extension is activated
-	console.log('Congratulations, your extension "sensi-code" is now active!');
+	// Track the current emotion data
+	let emotionData = {
+		emotion: "neutral",  // Initial emotion (can be dynamically updated)
+		duration: 0,
+		typingSpeed: 0,
+		syntaxErrors: 0,
+		windowSwitchCount: 0,
+		timestamp: new Date().toISOString()
+	};
 
-	// The command has been defined in the package.json file
-	// Now provide the implementation of the command with  registerCommand
-	// The commandId parameter must match the command field in package.json
-	const disposable = vscode.commands.registerCommand('sensi-code.helloWorld', function () {
-		// The code you place here will be executed every time your command is executed
+	// Command to fetch and display current emotion
+	const displayEmotionCommand = vscode.commands.registerCommand('sensi-code.displayEmotion', async function () {
+		try {
+			// Fetch current emotion from the server
+			const response = await axios.get('http://localhost:8080/current_emotion');
+			const emotion = response.data.mood;
 
-		// Display a message box to the user
-		vscode.window.showInformationMessage('Hello World from Sensi Code!');
+			// Display emotion in the VS Code info message
+			vscode.window.showInformationMessage(`Current Emotion: ${emotion}`);
+		} catch (error) {
+			console.error("Error fetching emotion:", error);
+			vscode.window.showErrorMessage("Unable to fetch emotion. Please ensure the server is running.");
+		}
 	});
 
-	context.subscriptions.push(disposable);
+	context.subscriptions.push(displayEmotionCommand);
+
+	// Periodically update emotion
+	setInterval(async () => {
+		try {
+			const response = await axios.get('http://localhost:8080/current_emotion');
+			emotionData.emotion = response.data.mood;  // Update emotion
+
+			// Send the emotion data to the server
+			await axios.post('http://localhost:8080/log', emotionData);
+			console.log('Logged data:', emotionData);  // Confirm logging in the console
+
+		} catch (error) {
+			console.error("Error logging emotion data:", error);
+		}
+	}, 5000);  // Update every 5 seconds
+
+	// Track typing speed (for example, track keystrokes per event)
+	vscode.workspace.onDidChangeTextDocument(() => {
+		emotionData.typingSpeed++;
+	});
+
+	// Track syntax errors
+	vscode.languages.onDidChangeDiagnostics((event) => {
+		emotionData.syntaxErrors = event.uris.map(uri => vscode.languages.getDiagnostics(uri))
+			.flat().filter(d => d.severity === vscode.DiagnosticSeverity.Error).length;
+	});
+
+	// Track window switches (simplified)
+	let lastWindowSwitchTime = Date.now();
+	vscode.window.onDidChangeActiveTextEditor(() => {
+		let now = Date.now();
+		emotionData.windowSwitchCount++;  // Increment window switch count
+		emotionData.duration = now - lastWindowSwitchTime;  // Track how long the editor was in focus
+		lastWindowSwitchTime = now;
+	});
 }
 
-// This method is called when your extension is deactivated
-function deactivate() {}
+function deactivate() { }
 
 module.exports = {
 	activate,
 	deactivate
-}
+};
