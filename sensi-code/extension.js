@@ -59,7 +59,7 @@ function activate(context) {
 	setInterval(async () => {
 		try {
 			const response = await axios.get('http://localhost:8080/current_emotion');
-			emotionData.emotion = response.data.mood; 
+			emotionData.emotion = response.data.mood;
 
 			await axios.post('http://localhost:8080/log', emotionData);
 			console.log('Logged data:', emotionData);
