@@ -1,6 +1,21 @@
 const vscode = require('vscode');
 const axios = require('axios');  // Use axios for HTTP requests
 
+const happyMessages = [
+	"You're doing great! Keep it up!",
+	"The best is yet to come!",
+	"You're on fire today! Keep pushing!",
+	"Great things are happening to you!"
+];
+
+
+const sadAngryQuotes = [
+	"Every day may not be good, but there's something good in every day.",
+	"Don't let yesterday take up too much of today.",
+	"When you feel like quitting, think about why you started.",
+	"Difficult roads often lead to beautiful destinations."
+];
+
 function activate(context) {
 	console.log('Sensi-code extension is now active!');
 
@@ -21,8 +36,26 @@ function activate(context) {
 			const response = await axios.get('http://localhost:8080/current_emotion');
 			const emotion = response.data.mood;
 
-			// Display emotion in the VS Code info message
-			vscode.window.showInformationMessage(`Current Emotion: ${emotion}`);
+			// Decide the message based on the mood
+			let message = '';
+
+			// Check if mood is a happy one
+			const happyMoods = ['happy']
+			const sadAngryMoods = ['sad', 'angry']
+
+			if (happyMoods.includes(emotion)) {
+				// Randomly pick a message from the happyMessages array
+				message = happyMessages[Math.floor(Math.random() * happyMessages.length)];
+			} else if (sadAngryMoods.includes(emotion)) {
+				// Randomly pick a quote from the sadAngryQuotes array
+				message = sadAngryQuotes[Math.floor(Math.random() * sadAngryQuotes.length)];
+			} else {
+				// If mood doesn't match, do nothing
+				message = `Your mood is ${emotion}. Keep going!`;
+			}
+
+			vscode.window.showInformationMessage(message);
+
 		} catch (error) {
 			console.error("Error fetching emotion:", error);
 			vscode.window.showErrorMessage("Unable to fetch emotion. Please ensure the server is running.");
