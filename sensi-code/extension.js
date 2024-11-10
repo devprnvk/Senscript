@@ -1,5 +1,5 @@
 const vscode = require('vscode');
-const axios = require('axios');  // Use axios for HTTP requests
+const axios = require('axios');
 
 const happyMessages = [
 	"You're doing great! Keep it up!",
@@ -19,9 +19,8 @@ const sadAngryQuotes = [
 function activate(context) {
 	console.log('Sensi-code extension is now active!');
 
-	// Track the current emotion data
 	let emotionData = {
-		emotion: "neutral",  // Initial emotion (can be dynamically updated)
+		emotion: "neutral",
 		duration: 0,
 		typingSpeed: 0,
 		syntaxErrors: 0,
@@ -29,32 +28,24 @@ function activate(context) {
 		timestamp: new Date().toISOString()
 	};
 
-	// Command to fetch and display current emotion
 	const displayEmotionCommand = vscode.commands.registerCommand('sensi-code.displayEmotion', async function () {
 		try {
-			// Fetch current emotion from the server
 			const response = await axios.get('http://localhost:8080/current_emotion');
 			const emotion = response.data.mood;
 
-			// Decide the message based on the mood
 			let message = '';
 
-			// Check if mood is a happy one
 			const happyMoods = ['happy']
 			const sadAngryMoods = ['sad', 'angry']
 
 			if (happyMoods.includes(emotion)) {
-				// Randomly pick a message from the happyMessages array
 				message = happyMessages[Math.floor(Math.random() * happyMessages.length)];
 			} else if (sadAngryMoods.includes(emotion)) {
-				// Randomly pick a quote from the sadAngryQuotes array
 				message = sadAngryQuotes[Math.floor(Math.random() * sadAngryQuotes.length)];
 			} else {
-				// If mood doesn't match, do nothing
 				message = `Your mood is ${emotion}. Keep going!`;
 			}
 
-			// Show the message in a VS Code pop-up
 			vscode.window.showInformationMessage(message);
 
 		} catch (error) {
@@ -65,38 +56,33 @@ function activate(context) {
 
 	context.subscriptions.push(displayEmotionCommand);
 
-	// Periodically update emotion
 	setInterval(async () => {
 		try {
 			const response = await axios.get('http://localhost:8080/current_emotion');
-			emotionData.emotion = response.data.mood;  // Update emotion
+			emotionData.emotion = response.data.mood; 
 
-			// Send the emotion data to the server
 			await axios.post('http://localhost:8080/log', emotionData);
-			console.log('Logged data:', emotionData);  // Confirm logging in the console
+			console.log('Logged data:', emotionData);
 
 		} catch (error) {
 			console.error("Error logging emotion data:", error);
 		}
-	}, 5000);  // Update every 5 seconds
+	}, 5000);
 
-	// Track typing speed (for example, track keystrokes per event)
 	vscode.workspace.onDidChangeTextDocument(() => {
 		emotionData.typingSpeed++;
 	});
 
-	// Track syntax errors
 	vscode.languages.onDidChangeDiagnostics((event) => {
 		emotionData.syntaxErrors = event.uris.map(uri => vscode.languages.getDiagnostics(uri))
 			.flat().filter(d => d.severity === vscode.DiagnosticSeverity.Error).length;
 	});
 
-	// Track window switches (simplified)
 	let lastWindowSwitchTime = Date.now();
 	vscode.window.onDidChangeActiveTextEditor(() => {
 		let now = Date.now();
-		emotionData.windowSwitchCount++;  // Increment window switch count
-		emotionData.duration = now - lastWindowSwitchTime;  // Track how long the editor was in focus
+		emotionData.windowSwitchCount++;
+		emotionData.duration = now - lastWindowSwitchTime;
 		lastWindowSwitchTime = now;
 	});
 }
