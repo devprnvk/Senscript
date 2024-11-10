@@ -54,6 +54,7 @@ function activate(context) {
 				message = `Your mood is ${emotion}. Keep going!`;
 			}
 
+			// Show the message in a VS Code pop-up
 			vscode.window.showInformationMessage(message);
 
 		} catch (error) {

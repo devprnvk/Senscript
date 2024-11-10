@@ -26,7 +26,7 @@ schema = StructType([
 emotions = ["neutral", "happy", "angry", "sad", "fear"]
 
 # Path to your Delta table
-delta_path = "Senscript/data/synthetic_table"
+delta_path = "Senscript/data/table"
 
 # Function to generate synthetic data with realistic patterns
 def generate_synthetic_data(num_records):
@@ -51,11 +51,11 @@ def generate_synthetic_data(num_records):
             syntax_errors = random.randint(3, 5)
             window_switch_count = random.randint(5, 10)
         elif emotion == "sad":
-            typing_speed = random.randint(30, 60)
+            typing_speed = random.randint(30, 40)
             syntax_errors = random.randint(2, 4)
             window_switch_count = random.randint(4, 8)
         elif emotion == "fear":
-            typing_speed = random.randint(25, 55)
+            typing_speed = random.randint(25, 35)
             syntax_errors = random.randint(1, 4)
             window_switch_count = random.randint(3, 7)
 
@@ -69,7 +69,7 @@ def generate_synthetic_data(num_records):
     return data
 
 # Generate 1000 records of synthetic data
-synthetic_data = generate_synthetic_data(1000)
+synthetic_data = generate_synthetic_data(100)
 
 # Convert the list to a Spark DataFrame
 synthetic_df = spark.createDataFrame(synthetic_data, schema)
